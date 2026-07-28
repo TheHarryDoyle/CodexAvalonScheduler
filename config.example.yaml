@@ -1,0 +1,133 @@
+timezone: "America/Chicago"
+
+miner:
+  host: "192.168.86.210"
+  port: 4028
+  timeout_seconds: 5
+
+automation:
+  enabled: true
+  dry_run: true
+  min_minutes_between_mode_changes: 10
+  startup_catchup_enabled: true
+  morning_catchup_interval_seconds: 900
+  daily_job_misfire_grace_seconds: 21600
+  enable_peak_solar_super_window: true
+  enable_late_afternoon_solar_bridge: true
+  enable_cheap_power_window: false
+  enable_powerwall_policy: false
+  evening_behavior: "eco"
+  cloudy_behavior: "eco"
+  rainy_behavior: "off"
+  use_standard: false
+  softoff_enabled: true
+  softon_enabled: true
+  softoff_uses_future_timestamp: true
+  softoff_delay_seconds: 8
+  softon_delay_seconds: 8
+  softon_mode_retry_interval_seconds: 15
+  softon_mode_retry_timeout_seconds: 300
+
+schedule:
+  morning_weather_decision: "08:00"
+  peak_solar_high: "11:30"
+  peak_solar_low: "14:30"
+  late_afternoon_bridge: "16:00"
+  evening_low: "18:00"
+  cheap_power_high: "00:00"
+  cheap_power_low: "04:00"
+  powerwall_guard_times:
+    - "21:00"
+    - "22:00"
+    - "23:00"
+    - "23:45"
+    - "01:00"
+    - "02:00"
+    - "03:00"
+    - "03:30"
+
+weather:
+  provider: "open_meteo"
+  latitude: 0.0
+  longitude: 0.0
+  forecast_day_start: "09:00"
+  forecast_day_end: "18:00"
+  peak_solar_start: "11:00"
+  peak_solar_end: "15:00"
+  peak_solar_min_avg_shortwave_radiation_w_m2: 550
+  late_afternoon_bridge_start: "16:00"
+  late_afternoon_bridge_end: "18:00"
+  late_afternoon_bridge_min_avg_shortwave_radiation_w_m2: 250
+  sunny_cloud_cover_max_percent: 40
+  cloudy_cloud_cover_max_percent: 75
+  rainy_precip_probability_min_percent: 50
+  rainy_precip_mm_min: 1.0
+  rainy_precip_amount_probability_min_percent: 20
+  weather_code_precip_probability_min_percent: 20
+  weather_code_precip_mm_min: 0.1
+
+tesla:
+  enabled: false
+  client_id_env: "TESLA_CLIENT_ID"
+  client_secret_env: "TESLA_CLIENT_SECRET"
+  token_cache_path: "tesla_token_cache.json"
+  energy_site_id: null  # set to your numeric Tesla energy-site ID
+  redirect_uri: "http://localhost:8765/callback"
+
+nest:
+  enabled: false
+  project_id: ""
+  client_id_env: "NEST_CLIENT_ID"
+  client_secret_env: "NEST_CLIENT_SECRET"
+  refresh_token_env: "NEST_REFRESH_TOKEN"
+  refresh_token_dpapi_path: "outputs/nest_sdm_refresh_token.dpapi.txt"
+  readings_log_path: "outputs/nest_readings.jsonl"
+  monthly_backfill_path: "outputs/nest_energy_dashboard_monthly_backfill.csv"
+  selected_thermostat_name: "Hallway Thermostat"
+  redirect_uri: "https://www.google.com"
+  auth_base_url: "https://nestservices.google.com/partnerconnections"
+  timeout_seconds: 20
+  poll_interval_seconds: 60
+  failure_backoff_max_seconds: 3600
+
+f2pool:
+  enabled: false
+  api_token_env: "F2POOL_API_TOKEN"
+  mining_user_env: "F2POOL_MINING_USER"
+  mining_user: ""
+  currency: "bitcoin"
+  api_base_url: "https://api.f2pool.com"
+  api_v2_base_url: "https://api.f2pool.com/v2"
+  network_context_enabled: true
+  network_context_api_base_url: "https://mempool.space/api/v1"
+  network_context_pool_slug: "f2pool"
+  network_status_page_url: "https://www.f2pool.com/coin/bitcoin"
+  rewards_backfill_days: 14
+  timeout_seconds: 20
+  snapshots_log_path: "outputs/f2pool_profitability.jsonl"
+  historical_settlement_csv_path: "data/f2pool_btc_settlements_2025-07-01_2026-06-22.csv"
+  poll_interval_seconds: 600
+  baseline_window_days: 14
+  baseline_min_samples_per_mode: 24
+  min_rate_sample_elapsed_minutes: 5
+  max_rate_sample_age_minutes: 180
+  shadow_enter_super_ratio: 2.0
+  shadow_hold_super_ratio: 1.4
+  shadow_exit_super_ratio: 1.3
+  historical_seed_baseline_window_days: 365
+  csv_seed_eco_min_hashrate_th_s: 50
+  csv_seed_eco_max_hashrate_th_s: 65
+  csv_seed_super_min_hashrate_th_s: 90
+  csv_seed_super_max_hashrate_th_s: 110
+
+energy_policy:
+  battery_reserve_percent: 25
+  monthly_net_export_min_kwh: 0
+  max_tesla_requests_per_day: 12
+  enable_evening_predrain_super: true
+  cheap_power_requires_monthly_net_export: true
+  off_at_cheap_power_end: true
+  enable_unlimited_charging_adjustment: false
+  unlimited_charging_start_date: null
+  unlimited_charging_start: "00:00"
+  unlimited_charging_end: "06:00"

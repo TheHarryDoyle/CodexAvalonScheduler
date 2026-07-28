@@ -1,0 +1,27 @@
+.venv/
+__pycache__/
+.pytest_cache/
+
+# Environment and credential material
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p8
+*.p12
+client-secret*.json
+credentials*.json
+
+*.log
+state.json
+*.auth-block
+.*.auth-block.*.tmp
+config.yaml
+config.*.yaml
+!config.example.yaml
+*token_cache*.json
+*refresh_token*
+
+outputs/
+work/
