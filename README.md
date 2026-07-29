@@ -1,6 +1,6 @@
 # Avalon Q Scheduler
 
-> Public admissions-review snapshot. Source code, tests, and technical documentation are included; credentials, machine-local configuration, runtime state, and the complete private operational history are intentionally excluded.
+> **Public admissions-review snapshot.** Avalon Q Scheduler is a personal home-automation project I direct and operate with AI-assisted coding tools. AI assistance was also used to audit and sanitize this copy. The source, tests, and functional intent are retained; credentials, runtime state, and deployment-specific material remain private. See the [complete no-hash development graph](DEVELOPMENT_HISTORY.md) and [publication boundary](PUBLIC_REVIEW_SNAPSHOT.md).
 
 Local Python automation for a Canaan Avalon Q miner. It decides between `Super`, `Eco`, and optional `Off/Standby` using weather, a limited peak-solar schedule, and an optional overnight cheap-power window.
 
@@ -9,7 +9,7 @@ The Avalon miner API used here is raw TCP text on port `4028`. It is not HTTP, H
 ## Install
 
 ```powershell
-cd "C:\Users\doyle\Documents\Codex\2026-06-17\build-a-python-automation-project-for"
+cd "C:\path\to\CodexAvalonScheduler"
 py -3.11 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
@@ -361,7 +361,7 @@ Rain/storm weather codes only force Off when the daytime forecast also reaches b
 Create a task that starts the scheduler at login:
 
 ```powershell
-$Project = "C:\Users\doyle\Documents\Codex\2026-06-17\build-a-python-automation-project-for"
+$Project = "C:\path\to\CodexAvalonScheduler"
 $Python = "$Project\.venv\Scripts\python.exe"
 $Action = New-ScheduledTaskAction -Execute $Python -Argument "-m avalon_q_scheduler.main run" -WorkingDirectory $Project
 $Trigger = New-ScheduledTaskTrigger -AtLogOn
