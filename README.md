@@ -1,10 +1,23 @@
 # Avalon Q Scheduler
 
-> **Public admissions-review snapshot.** Avalon Q Scheduler is a personal home-automation project I direct and operate with AI-assisted coding tools. AI assistance was also used to audit and sanitize this copy. The source, tests, and functional intent are retained; credentials, runtime state, and deployment-specific material remain private. See the [complete no-hash development graph](DEVELOPMENT_HISTORY.md) and [publication boundary](PUBLIC_REVIEW_SNAPSHOT.md).
+> **Public review snapshot.** Avalon Q Scheduler is a personal home-automation project I direct and operate with AI-assisted coding tools. AI assistance was also used to audit and sanitize this copy. The source, tests, and functional intent are retained; credentials, runtime state, and deployment-specific material remain private. See the [sanitized development history](DEVELOPMENT_HISTORY.md) and [publication boundary](PUBLIC_REVIEW_SNAPSHOT.md).
 
 Local Python automation for a Canaan Avalon Q miner. It decides between `Super`, `Eco`, and optional `Off/Standby` using weather, a limited peak-solar schedule, and an optional overnight cheap-power window.
 
 The Avalon miner API used here is raw TCP text on port `4028`. It is not HTTP, HTTPS, SSH, or browser automation. This project never uses `requests`, Selenium, or SSH for miner control.
+
+## Understand This Project
+
+| Start here | What it provides evidence for |
+|---|---|
+| [`avalon_q_scheduler/decision_engine.py`](avalon_q_scheduler/decision_engine.py) | Pure weather and solar policy decisions, kept separate from device and provider I/O. |
+| [`avalon_q_scheduler/scheduler.py`](avalon_q_scheduler/scheduler.py) and [`state_store.py`](avalon_q_scheduler/state_store.py) | Job orchestration, cooldowns, startup catch-up, persisted mode state, API-request budgeting, and failure recovery. |
+| [`avalon_client.py`](avalon_q_scheduler/avalon_client.py), [`tesla_client.py`](avalon_q_scheduler/tesla_client.py), and [`nest_client.py`](avalon_q_scheduler/nest_client.py) | The raw TCP device boundary and the optional external-service adapters, including token persistence and response validation. |
+| [`f2pool_client.py`](avalon_q_scheduler/f2pool_client.py), [`f2pool_profitability.py`](avalon_q_scheduler/f2pool_profitability.py), and [`PROJECT_PLAN.md`](PROJECT_PLAN.md) | Source-labeled network data, settlement parsing, per-mode baselines, and the shadow-first rollout boundary. |
+| [`tests/`](tests/) | The 112-test offline suite covering policy rules, state transitions, provider payloads, token rotation, retries, and failure cases. |
+| [`config.example.yaml`](config.example.yaml) | The public configuration surface, dry-run default, optional integrations, schedules, timeouts, and safety gates. |
+| [`DEVELOPMENT_HISTORY.md`](DEVELOPMENT_HISTORY.md) | All 49 preserved commits, their real linear topology, and the retained branch/ref labels without hashes or author metadata. |
+| [`PUBLIC_REVIEW_SNAPSHOT.md`](PUBLIC_REVIEW_SNAPSHOT.md) | AI-assistance disclosure, publication boundary, and the material intentionally kept private. |
 
 ## Install
 
@@ -375,3 +388,92 @@ Reserve the miner's LAN IP in Google Home or your router DHCP settings so the IP
 ## Safety
 
 `Super`/high mode may pull significant power. Verify the outlet, wiring, circuit rating, breaker, plug, extension cords, and ambient cooling are safe before enabling `dry_run: false`.
+
+## Profiling and Performance Notes
+
+These measurements were taken locally on 2026-07-29 with Python 3.12.13 on Windows AMD64. The pure-function and file-parsing measurements used `timeit.repeat` after one warm-up call. Results will vary with the Python build, processor, filesystem cache, and background load. Network, provider, and physical-device latency was deliberately excluded.
+
+| Operation | Samples | Iterations per sample | Average | Min | Max | Measurement scope |
+|---|---:|---:|---:|---:|---:|---|
+| Parse [`config.example.yaml`](config.example.yaml) with `load_config` | 10 | 100 | 3.417 ms | 3.200 ms | 4.076 ms | YAML parsing plus construction of the immutable application configuration |
+| Evaluate one in-memory morning weather decision | 10 | 100,000 | 0.652 us | 0.627 us | 0.696 us | Fixed sunny forecast; no file, device, or network access |
+| Parse the checked-in settlement CSV | 10 | 100 | 3.887 ms | 3.295 ms | 4.998 ms | Reads and normalizes 337 valid settlement rows |
+| Run the complete pytest process | 5 | 1 | 1.263 s | 1.188 s | 1.354 s | Includes interpreter and pytest startup; all 112 tests passed in every sample |
+
+The test-suite measurement used:
+
+```powershell
+python -B -m pytest -q -p no:cacheprovider
+```
+
+The three application measurements exercise `load_config`, `DecisionEngine.morning_weather_decision`, and `_read_settlement_csv` against the public example configuration, a fixed in-memory forecast, and the checked-in CSV respectively. They are local compute measurements; they do not estimate end-to-end scheduler latency.
+
+### Compute Cost and Bottlenecks
+
+Let `C` be the number of weather codes in one forecast, `B` the size of the YAML configuration, `R` the number of settlement rows, and `H` the number of accumulated profitability-history records.
+
+| Path | Cost shape | Primary constraint |
+|---|---|---|
+| Weather policy evaluation | `O(C)` time and constant auxiliary memory | A small fixed set of thresholds and weather codes |
+| Configuration loading | `O(B)` time and memory | YAML parsing at process startup |
+| Settlement CSV parsing | `O(R)` time and memory | Full-file parsing into normalized row dictionaries |
+| Profitability snapshot construction | `O(H)` time and memory | The JSONL history is loaded into a list, then scanned for the prior sample and per-mode baseline |
+| Device and provider calls | Dominated by external I/O | Synchronous TCP/HTTP calls are bounded by configured timeouts, not by the sub-millisecond policy calculation |
+
+The main growth-sensitive path is profitability history: `load_profitability_records` reads the complete JSONL file, and baseline construction makes linear passes over those records. If that log grows materially, a bounded streaming window, compacted summaries, or indexed storage would reduce both memory and repeated scan cost. The scheduler limits interval jobs to one instance and coalesces missed executions, preventing slow external calls from creating an unbounded queue; configured polling intervals and request budgets also keep this a low-frequency control workload.
+
+## Complete Sanitized Git Graph
+
+The complete no-hash Git graph from [`DEVELOPMENT_HISTORY.md`](DEVELOPMENT_HISTORY.md) is reproduced below, newest to oldest.
+
+```text
+* 2026-07-17 | Document Avalon project operating rules [master]
+* 2026-07-17 | Make Nest OAuth recovery automatic
+* 2026-07-15 | Use grid-only Tesla charging adjustment
+* 2026-07-12 | Add optional Tesla car charging adjustment
+* 2026-07-07 | Add Nest OAuth relink command
+* 2026-07-07 | Retry missed morning weather catchup
+* 2026-07-07 | Fix missed morning Avalon wakeup
+* 2026-07-03 | Supplement pool hashrate from mempool estimate
+* 2026-07-03 | Require documentation checks before integration limits
+* 2026-07-03 | Add Codex agent guardrails
+* 2026-07-03 | Sync real F2Pool reward settlements
+* 2026-07-03 | Capture public Bitcoin network context
+* 2026-07-03 | Capture F2Pool network context fields
+* 2026-06-29 | Add future local dashboard plan
+* 2026-06-29 | Clarify F2Pool shadow baseline plan
+* 2026-06-29 | Track F2Pool settlement CSV seed data
+* 2026-06-29 | Seed F2Pool baselines from settlement CSV
+* 2026-06-29 | Add F2Pool profitability shadow baselines
+* 2026-06-29 | Add read-only F2Pool profitability snapshots
+* 2026-06-29 | Add read-only Nest AC baseline monitoring
+* 2026-06-29 | Add Powerwall-aware energy policy
+* 2026-06-27 | Add late afternoon solar bridge
+* 2026-06-27 | Add peak solar Super window
+* 2026-06-26 | Refresh README [evening-low-change; pull/1/head]
+* 2026-06-26 | Refresh config example
+* 2026-06-26 | Refresh cheap power scheduling gate
+* 2026-06-26 | Refresh schedule defaults
+* 2026-06-26 | Update example config for current solar window
+* 2026-06-26 | Document optional overnight cheap power window
+* 2026-06-26 | Deduplicate scheduler test fakes
+* 2026-06-26 | Deduplicate scheduler test fakes
+* 2026-06-26 | Test optional cheap power window scheduling
+* 2026-06-26 | Document optional overnight cheap power window
+* 2026-06-26 | Update example config for current solar window
+* 2026-06-26 | Gate overnight cheap power jobs behind config
+* 2026-06-26 | Make overnight cheap power window configurable
+* 2026-06-26 | Document 6 PM low schedule and remove overnight high window
+* 2026-06-26 | Update scheduler job registration test
+* 2026-06-26 | Stop scheduling overnight cheap power mode changes
+* 2026-06-26 | Update example schedule for evening low only
+* 2026-06-26 | Update evening low schedule defaults
+* 2026-06-23 | Persist manual weather decisions
+* 2026-06-22 | Require precipitation for storm codes
+* 2026-06-20 | Handle Windows scheduler shutdown
+* 2026-06-20 | Require confidence for rain amount
+* 2026-06-20 | Fix manual softoff command
+* 2026-06-20 | Retry mode changes after softon
+* 2026-06-18 | Remove local defaults from example config
+* 2026-06-18 | Initial Codex Avalon scheduler [root]
+```
